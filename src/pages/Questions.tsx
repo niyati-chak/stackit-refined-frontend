@@ -1,15 +1,18 @@
+
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, TrendingUp, Users, MessageCircle, Award, ArrowRight } from 'lucide-react';
+import { Search, Filter, MessageCircle, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Navbar } from '@/components/Layout/Navbar';
 import { formatDistanceToNow } from 'date-fns';
 
+// Mock data (same as Index page)
 interface Question {
   id: string;
   title: string;
@@ -74,25 +77,33 @@ const mockQuestions: Question[] = [
   }
 ];
 
-const stats = [
-  { label: 'Questions', value: '12.5K', icon: MessageCircle, color: 'text-blue-500' },
-  { label: 'Answers', value: '45.2K', icon: Award, color: 'text-green-500' },
-  { label: 'Users', value: '8.7K', icon: Users, color: 'text-purple-500' },
-  { label: 'Daily Active', value: '2.1K', icon: TrendingUp, color: 'text-orange-500' }
-];
-
-export default function Index() {
+export default function Questions() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [activeTab, setActiveTab] = useState('all');
 
-  // Filter and sort questions based on search query and sort option
   const filteredAndSortedQuestions = useMemo(() => {
     let filtered = mockQuestions;
+
+    // Filter by tab
+    switch (activeTab) {
+      case 'unanswered':
+        filtered = mockQuestions.filter(q => q.stats.answers === 0);
+        break;
+      case 'answered':
+        filtered = mockQuestions.filter(q => q.stats.answers > 0);
+        break;
+      case 'accepted':
+        filtered = mockQuestions.filter(q => q.hasAcceptedAnswer);
+        break;
+      default:
+        filtered = mockQuestions;
+    }
 
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = mockQuestions.filter(question =>
+      filtered = filtered.filter(question =>
         question.title.toLowerCase().includes(query) ||
         question.description.toLowerCase().includes(query) ||
         question.tags.some(tag => tag.toLowerCase().includes(query)) ||
@@ -107,8 +118,8 @@ export default function Index() {
           return b.stats.votes - a.stats.votes;
         case 'answers':
           return b.stats.answers - a.stats.answers;
-        case 'unanswered':
-          return a.stats.answers - b.stats.answers;
+        case 'views':
+          return b.stats.views - a.stats.views;
         case 'newest':
         default:
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -116,96 +127,59 @@ export default function Index() {
     });
 
     return sorted;
-  }, [searchQuery, sortBy]);
+  }, [searchQuery, sortBy, activeTab]);
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Hero Section */}
-      <section className="border-b bg-gradient-to-b from-background to-accent/20">
-        <div className="container py-16 md:py-24">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Find answers to your
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                {' '}coding questions
-              </span>
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join thousands of developers sharing knowledge, solving problems, and building the future together.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild className="text-lg px-8">
-                <Link to="/ask">
-                  Ask Your Question
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8" asChild>
-                <Link to="/questions">Browse Questions</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-12 bg-accent/30">
-        <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="flex justify-center mb-2">
-                  <stat.icon className={`h-8 w-8 ${stat.color}`} />
-                </div>
-                <div className="text-2xl md:text-3xl font-bold mb-1">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
       <main className="container py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">All Questions</h1>
+            <p className="text-muted-foreground">
+              {mockQuestions.length} questions
+            </p>
+          </div>
+          <Button asChild>
+            <Link to="/ask">Ask Question</Link>
+          </Button>
+        </div>
+
         {/* Search and Filters */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search questions, tags, or users..."
+                placeholder="Search questions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12"
+                className="pl-10"
               />
             </div>
-            <div className="flex gap-2">
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-40 h-12">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="votes">Most Votes</SelectItem>
-                  <SelectItem value="answers">Most Answers</SelectItem>
-                  <SelectItem value="unanswered">Unanswered</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" size="icon" className="h-12 w-12">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </div>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="votes">Most Votes</SelectItem>
+                <SelectItem value="answers">Most Answers</SelectItem>
+                <SelectItem value="views">Most Views</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Search Results Info */}
-          {searchQuery.trim() && (
-            <div className="mb-4 text-sm text-muted-foreground">
-              {filteredAndSortedQuestions.length} result{filteredAndSortedQuestions.length !== 1 ? 's' : ''} 
-              {' '}for "{searchQuery}"
-            </div>
-          )}
+          {/* Tabs for question filtering */}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full max-w-md grid-cols-4">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="unanswered">Unanswered</TabsTrigger>
+              <TabsTrigger value="answered">Answered</TabsTrigger>
+              <TabsTrigger value="accepted">Accepted</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Questions List */}
@@ -216,7 +190,7 @@ export default function Index() {
               <h3 className="text-lg font-semibold mb-2">No questions found</h3>
               <p className="text-muted-foreground mb-4">
                 {searchQuery.trim() 
-                  ? "Try adjusting your search terms or browse all questions."
+                  ? "Try adjusting your search terms or filters."
                   : "Be the first to ask a question!"
                 }
               </p>
@@ -256,8 +230,9 @@ export default function Index() {
                           <div className="text-xs">votes</div>
                         </div>
                         <div className="text-center">
-                          <div className={`font-medium ${question.hasAcceptedAnswer ? 'text-green-600' : 'text-foreground'}`}>
+                          <div className={`font-medium flex items-center gap-1 ${question.hasAcceptedAnswer ? 'text-green-600' : 'text-foreground'}`}>
                             {question.stats.answers}
+                            {question.hasAcceptedAnswer && <CheckCircle className="h-3 w-3" />}
                           </div>
                           <div className="text-xs">answers</div>
                         </div>
@@ -285,7 +260,8 @@ export default function Index() {
                       </Badge>
                     </div>
                     
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
                       {formatDistanceToNow(new Date(question.createdAt), { addSuffix: true })}
                     </div>
                   </div>
@@ -295,7 +271,7 @@ export default function Index() {
           )}
         </div>
 
-        {/* Load More */}
+        {/* Pagination */}
         {filteredAndSortedQuestions.length > 0 && (
           <div className="text-center mt-8">
             <Button variant="outline" size="lg">
