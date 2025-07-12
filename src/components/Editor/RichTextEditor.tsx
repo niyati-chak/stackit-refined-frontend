@@ -167,23 +167,27 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
       </div>
       
       {/* Editor */}
-      <div
-        ref={editorRef}
-        contentEditable
-        className="min-h-[200px] p-4 outline-none prose prose-sm max-w-none dark:prose-invert"
-        style={{ whiteSpace: 'pre-wrap' }}
-        onInput={handleInput}
-        dangerouslySetInnerHTML={{ __html: value }}
-        data-placeholder={placeholder}
-      />
-      
-      <style jsx>{`
-        [contenteditable]:empty:before {
-          content: attr(data-placeholder);
-          color: hsl(var(--muted-foreground));
-          pointer-events: none;
-        }
-      `}</style>
+      <div className="relative">
+        <div
+          ref={editorRef}
+          contentEditable
+          className="min-h-[200px] p-4 outline-none prose prose-sm max-w-none dark:prose-invert editor-content"
+          style={{ whiteSpace: 'pre-wrap' }}
+          onInput={handleInput}
+          dangerouslySetInnerHTML={{ __html: value }}
+          data-placeholder={placeholder}
+        />
+        
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .editor-content:empty:before {
+              content: attr(data-placeholder);
+              color: hsl(var(--muted-foreground));
+              pointer-events: none;
+            }
+          `
+        }} />
+      </div>
     </div>
   );
 }
