@@ -1,57 +1,74 @@
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Bell, Menu, Moon, Sun, X, LogOut, User, Settings } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Search, Bell, User, Menu, X, Sun, Moon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationPanel } from '@/components/Notifications/NotificationPanel';
 
 export function Navbar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    setIsUserMenuOpen(false);
-    navigate('/');
-  };
+  const navigation = [
+    { name: 'Home', href: '/' },
+    { name: 'Questions', href: '/questions' },
+    { name: 'Tags', href: '/tags' },
+  ];
 
   return (
-    <>
-      <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-4">
+    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      <div className="container">
+        <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-            <div className="h-8 w-8 rounded-md bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">S</span>
             </div>
-            <span className="font-bold text-xl hidden sm:inline-block">StackIt</span>
+            <span className="font-bold text-xl">StackIt</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
-              Home
-            </Link>
-            <Link to="/questions" className="text-sm font-medium hover:text-primary transition-colors">
-              Questions
-            </Link>
-            <Link to="/tags" className="text-sm font-medium hover:text-primary transition-colors">
-              Tags
-            </Link>
+          <div className="hidden md:flex items-center space-x-8">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location.pathname === item.href
+                    ? 'text-primary'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
           </div>
 
           {/* Right Side */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
+            {/* Search Bar - Hidden on mobile */}
+            <div className="hidden lg:flex relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                className="pl-10 w-64"
+              />
+            </div>
+
             {/* Theme Toggle */}
             <Button
               variant="ghost"
@@ -59,83 +76,67 @@ export function Navbar() {
               onClick={toggleTheme}
               className="h-9 w-9 p-0"
             >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
             </Button>
 
             {isAuthenticated ? (
               <>
                 {/* Ask Question Button */}
-                <Button asChild className="hidden sm:inline-flex">
-                  <Link to="/ask">Ask Question</Link>
+                <Button asChild size="sm" className="hidden md:flex">
+                  <Link to="/ask">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ask Question
+                  </Link>
                 </Button>
 
                 {/* Notifications */}
-                <Popover open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-9 w-9 p-0 relative">
-                      <Bell className="h-4 w-4" />
-                      <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs bg-red-500 text-white">
-                        3
-                      </Badge>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-0" align="end">
-                    <NotificationPanel />
-                  </PopoverContent>
-                </Popover>
+                <NotificationPanel />
 
                 {/* User Menu */}
-                <Popover open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" className="h-9 px-2">
-                      <Avatar className="h-6 w-6 mr-2">
-                        <AvatarImage src={user?.avatar} />
-                        <AvatarFallback>{user?.username?.[0]?.toUpperCase()}</AvatarFallback>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.avatar} alt={user?.username} />
+                        <AvatarFallback>
+                          {user?.username?.[0]?.toUpperCase()}
+                        </AvatarFallback>
                       </Avatar>
-                      <span className="hidden sm:inline-block text-sm font-medium">
-                        {user?.username}
-                      </span>
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-56" align="end">
-                    <div className="flex flex-col space-y-1">
-                      <div className="px-3 py-2">
-                        <p className="text-sm font-medium">{user?.username}</p>
-                        <p className="text-xs text-muted-foreground">{user?.email}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {user?.reputation} reputation
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        <p className="font-medium">{user?.username}</p>
+                        <p className="w-[200px] truncate text-sm text-muted-foreground">
+                          {user?.email}
                         </p>
                       </div>
-                      <Separator />
-                      <Button variant="ghost" className="justify-start h-9" asChild>
-                        <Link to="/profile">
-                          <User className="h-4 w-4 mr-2" />
-                          Profile
-                        </Link>
-                      </Button>
-                      <Button variant="ghost" className="justify-start h-9">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Settings
-                      </Button>
-                      <Separator />
-                      <Button 
-                        variant="ghost" 
-                        className="justify-start h-9 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-                        onClick={handleLogout}
-                      >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Logout
-                      </Button>
                     </div>
-                  </PopoverContent>
-                </Popover>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={logout} className="cursor-pointer">
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/login">Login</Link>
+                <Button variant="ghost" asChild>
+                  <Link to="/login">Sign In</Link>
                 </Button>
-                <Button size="sm" asChild>
+                <Button asChild>
                   <Link to="/register">Sign Up</Link>
                 </Button>
               </div>
@@ -146,51 +147,65 @@ export function Navbar() {
               variant="ghost"
               size="sm"
               className="md:hidden h-9 w-9 p-0"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              {mobileMenuOpen ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Menu className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>
 
         {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-t bg-background">
-            <div className="container py-4 space-y-2">
-              <Link 
-                to="/" 
-                className="block px-3 py-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link 
-                to="/questions" 
-                className="block px-3 py-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Questions
-              </Link>
-              <Link 
-                to="/tags" 
-                className="block px-3 py-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Tags
-              </Link>
-              {isAuthenticated && (
-                <Link 
-                  to="/ask" 
-                  className="block px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
+        {mobileMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 border-t">
+              {/* Search Bar */}
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search..." className="pl-10" />
+              </div>
+
+              {/* Navigation Links */}
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                    location.pathname === item.href
+                      ? 'text-primary bg-primary/10'
+                      : 'text-muted-foreground hover:text-primary hover:bg-accent'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
                 >
-                  Ask Question
+                  {item.name}
                 </Link>
+              ))}
+
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/ask"
+                    className="block px-3 py-2 text-base font-medium rounded-md text-muted-foreground hover:text-primary hover:bg-accent"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Ask Question
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="block px-3 py-2 text-base font-medium rounded-md text-muted-foreground hover:text-primary hover:bg-accent"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                </>
               )}
             </div>
           </div>
         )}
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 }

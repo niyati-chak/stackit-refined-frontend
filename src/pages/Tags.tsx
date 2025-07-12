@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, Hash, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,8 +90,13 @@ const mockTags: Tag[] = [
 ];
 
 export default function Tags() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('popular');
+
+  const handleTagClick = (tagName: string) => {
+    navigate(`/questions?tag=${encodeURIComponent(tagName)}`);
+  };
 
   const filteredAndSortedTags = useMemo(() => {
     let filtered = mockTags;
@@ -176,7 +180,11 @@ export default function Tags() {
             </div>
           ) : (
             filteredAndSortedTags.map((tag) => (
-              <Card key={tag.name} className="hover:shadow-md transition-shadow duration-200 cursor-pointer">
+              <Card 
+                key={tag.name} 
+                className="hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                onClick={() => handleTagClick(tag.name)}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary" className="text-sm px-3 py-1">
@@ -214,6 +222,7 @@ export default function Tags() {
                   key={tag.name} 
                   variant="outline" 
                   className="cursor-pointer hover:bg-accent transition-colors"
+                  onClick={() => handleTagClick(tag.name)}
                 >
                   {tag.name} ({tag.questionCount})
                 </Badge>
